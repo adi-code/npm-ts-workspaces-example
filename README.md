@@ -1,3 +1,57 @@
+
+# oclif bug
+
+This repo presents https://github.com/oclif/oclif/issues/1036 bug
+
+Forked from https://github.com/Quramy/npm-ts-workspaces-example
+Steps to reproduce:
+
+1. Fork https://github.com/Quramy/npm-ts-workspaces-example
+2. Run `npm install oclif --save-dev`
+3. Run `cd packages/ && npx oclif generate cli`
+4. Replace all occurrences of `x-core` -> `core`, remove `packages/x-cli`.
+5. Run `cd ../ && npm install`
+6. Run `cd packages/cli && npx oclif readme`
+
+Result:
+```
+$ npx oclif readme
+(node:19467) [MODULE_NOT_FOUND] ModuleLoadError Plugin: @myworkspace/cli: [MODULE_NOT_FOUND] require failed to load /home/adrian/npm-ts-workspaces-example/packages/cli/dist/commands/hello/index.js: Cannot find module '@myworkspace/core/src/hello'
+Require stack:
+- /home/adrian/npm-ts-workspaces-example/packages/cli/dist/commands/hello/index.js
+- /home/adrian/npm-ts-workspaces-example/node_modules/@oclif/core/lib/module-loader.js
+- /home/adrian/npm-ts-workspaces-example/node_modules/@oclif/core/lib/config/plugin.js
+- /home/adrian/npm-ts-workspaces-example/node_modules/@oclif/core/lib/config/config.js
+- /home/adrian/npm-ts-workspaces-example/node_modules/@oclif/core/lib/config/index.js
+- /home/adrian/npm-ts-workspaces-example/node_modules/@oclif/core/lib/command.js
+- /home/adrian/npm-ts-workspaces-example/node_modules/@oclif/core/lib/index.js
+- /home/adrian/npm-ts-workspaces-example/node_modules/oclif/bin/run
+module: @oclif/core@1.20.4
+task: toCached
+plugin: @myworkspace/cli
+root: /home/adrian/npm-ts-workspaces-example/packages/cli
+See more details with DEBUG=*
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:19467) [MODULE_NOT_FOUND] ModuleLoadError Plugin: @myworkspace/cli: [MODULE_NOT_FOUND] require failed to load /home/adrian/npm-ts-workspaces-example/packages/cli/dist/commands/hello/world.js: Cannot find module '@myworkspace/core/src/world'
+Require stack:
+- /home/adrian/npm-ts-workspaces-example/packages/cli/dist/commands/hello/world.js
+- /home/adrian/npm-ts-workspaces-example/node_modules/@oclif/core/lib/module-loader.js
+- /home/adrian/npm-ts-workspaces-example/node_modules/@oclif/core/lib/config/plugin.js
+- /home/adrian/npm-ts-workspaces-example/node_modules/@oclif/core/lib/config/config.js
+- /home/adrian/npm-ts-workspaces-example/node_modules/@oclif/core/lib/config/index.js
+- /home/adrian/npm-ts-workspaces-example/node_modules/@oclif/core/lib/command.js
+- /home/adrian/npm-ts-workspaces-example/node_modules/@oclif/core/lib/index.js
+- /home/adrian/npm-ts-workspaces-example/node_modules/oclif/bin/run
+module: @oclif/core@1.20.4
+task: toCached
+plugin: @myworkspace/cli
+root: /home/adrian/npm-ts-workspaces-example/packages/cli
+See more details with DEBUG=*
+replacing <!-- usage --> in README.md
+replacing <!-- commands --> in README.md
+```
+
+
 # How to build TypeScript mono-repo project
 
 [![github actions](https://github.com/Quramy/npm-ts-workspaces-example/workflows/build/badge.svg)](https://github.com/Quramy/npm-ts-workspaces-example/actions)
@@ -32,7 +86,7 @@ Put each package under the `packages` directory.
 ├── package-lock.json
 ├── package.json
 ├── packages
-│   ├── x-cli
+│   ├── cli
 │   │   ├── lib
 │   │   │   ├── cli.d.ts
 │   │   │   ├── cli.js
@@ -45,7 +99,7 @@ Put each package under the `packages` directory.
 │   │   │   ├── cli.ts
 │   │   │   └── main.ts
 │   │   └── tsconfig.json
-│   └── x-core
+│   └── core
 │       ├── lib
 │       │   ├── index.d.ts
 │       │   ├── index.js
@@ -79,15 +133,15 @@ Exec `npm install`. After successful running, all dependencies included from eac
 
 ## Dependencies across packages
 
-In this example, the `x-cli` package depends on another package, `x-core`. So to execute (or test) `x-cli`, `x-core` packages should be installed.
-But in development the `x-core` package is not published so you can't install it.
+In this example, the `cli` package depends on another package, `core`. So to execute (or test) `cli`, `core` packages should be installed.
+But in development the `core` package is not published so you can't install it.
 
-For example, `packages/x-cli/src/main.spec.ts` is a test code for `main.ts`, which depends on `packages/x-core/src/index.ts` .
+For example, `packages/cli/src/main.spec.ts` is a test code for `main.ts`, which depends on `packages/core/src/index.ts` .
 
 ```ts
-/* packages/x-cli/src/main.ts.*/
+/* packages/cli/src/main.ts.*/
 
-import { awesomeFn } from "@quramy/x-core";
+import { awesomeFn } from "@myworkspace/core";
 
 export async function main() {
   // dependencies across child packages
@@ -96,7 +150,7 @@ export async function main() {
 }
 ```
 
-So we need to link `x-core` package from `x-cli` to execute the `x-cli` 's test.
+So we need to link `core` package from `cli` to execute the `cli` 's test.
 
 Workspaces feature of npm also solves this problem. `npm i` creates sim-links of each package into the top-level `node_modules` dir.
 
@@ -104,7 +158,7 @@ Workspaces feature of npm also solves this problem. `npm i` creates sim-links of
 
 As mentioned above, npm cli resolves dependencies across packages. It's enough for "runtime". However considering TypeScript sources, in other words "static", it's not.
 
-We need to tell "x-cli package depends on x-core" to TypeScript compiler. TypeScript provides much useful feature to do this, ["Project References"](https://www.typescriptlang.org/docs/handbook/project-references.html).
+We need to tell "cli package depends on core" to TypeScript compiler. TypeScript provides much useful feature to do this, ["Project References"](https://www.typescriptlang.org/docs/handbook/project-references.html).
 
 First, you add `composite: true` to project-root tsconfig.json to use project references feature.
 
@@ -122,7 +176,7 @@ First, you add `composite: true` to project-root tsconfig.json to use project re
 Second, configure each package's tsconfig and configure dependencies across packages.
 
 ```js
-/* packages/x-cli/tsconfig.json */
+/* packages/cli/tsconfig.json */
 
 {
   "extends": "../../tsconfig.json",
@@ -130,7 +184,7 @@ Second, configure each package's tsconfig and configure dependencies across pack
     "rootDir": "src",
     "outDir": "lib"
   },
-  "references": [{ "path": "../x-core" }]
+  "references": [{ "path": "../core" }]
 }
 ```
 
@@ -141,7 +195,7 @@ And create a project which depends on all packages:
 
 {
   "files": [],
-  "references": [{ "path": "packages/x-core" }, { "path": "packages/x-cli" }]
+  "references": [{ "path": "packages/core" }, { "path": "packages/cli" }]
 }
 ```
 
